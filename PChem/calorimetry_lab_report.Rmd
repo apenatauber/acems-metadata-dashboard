@@ -1,0 +1,304 @@
+---
+title: "Calorimetry Lab Report"
+author: "Andrés Peña"
+date: "3/2/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(ggplot2)
+library(magrittr)
+library(dplyr)
+library(lubridate)
+library(latex2exp)
+knitr::opts_chunk$set(echo = FALSE)
+
+benzoic_acid <- read_csv("benzoic acid.csv")
+naphthalene <- read_csv("naphthalene.csv")
+gummy_bear <- read_csv("gummy bear.csv")
+```
+
+*Heat capacity of the system*
+\newline
+
+```{r}
+m_wire <- 0.0185
+m_wire_left <- 0.0079
+m_wire_combusted <- m_wire - m_wire_left
+m_wire_pellet <- 1.0126
+m_pellet <- m_wire_pellet - m_wire
+molar_mass_BA <- 122
+
+time_combustion = ms("43:30")
+```
+
+Mass of wire = `r m_wire` g
+
+Mass of wire left = `r m_wire_left` g
+
+Mass of wire combusted = `r m_wire_combusted` g
+
+Mass of wire + pellet = `r m_wire_pellet` g
+
+Mass of pellet = `r m_pellet` g
+
+```{r echo=FALSE}
+delta_h_BA <- m_pellet * -26435.8
+delta_u_wire <- m_wire_combusted * -5858
+
+mol_BA <- m_pellet / molar_mass_BA
+mol_gas_net <- 2.5
+delta_n <- mol_gas_net * mol_BA
+
+gas_constant <- 8.3145
+temp <- 298.2
+delta_u_BA <- delta_h_BA - gas_constant * temp * delta_n
+```
+
+$\Delta H_c (BA) = 0.9941g\ *\ -26435.8\ J/g =$ `r delta_h_BA` J
+
+$\Delta U (wire) = 0.0185\ g\ * -5858\ J/g =$ `r delta_u_wire` J
+
+$C_6 H_5 COOH(s) + 7.5O_2 (g) \rightarrow 7CO_2(g) + 3H_2 O(g)$
+
+Moles of benzoic acid = `r mol_BA`
+
+Moles of net gas produced per mole of benzoic acid = 2.5
+
+$\Delta n$ = 2.5 * Moles of benzoic acid = `r delta_n`
+
+$\Delta U(BA) = \Delta H(BA) - RT \Delta\ n$ = `r delta_u_BA` J
+
+
+```{r, echo = FALSE}
+
+max_row <- benzoic_acid %>%
+  arrange(desc(temperature)) %>%
+  head(1)
+max <- max_row[['time']]
+
+benzoic_acid_cooling <- benzoic_acid %>%
+  filter(time > max)
+
+cooling_m <- lm(temperature ~ time, data = benzoic_acid_cooling)
+benzoic_acid <- benzoic_acid %>%
+  mutate(
+    pred_temp = predict(cooling_m, benzoic_acid)
+  )
+
+combustion <- benzoic_acid %>%
+  filter(time == time_combustion)
+max_t <- combustion[['pred_temp']]
+min_t <- combustion[['temperature']]
+delta_t <- max_t - min_t
+
+benzoic_acid_plot <- ggplot(data = benzoic_acid) +
+  geom_point(aes(x = time, y = temperature)) +
+  geom_point(aes(x = time, y = pred_temp), color = "blue") +
+  geom_segment(
+    aes(x = time_combustion,
+        y = min_t,
+        xend = time_combustion,
+        yend = max_t),
+    arrow = arrow()
+  ) +
+  geom_text(aes(x = time_combustion - ms("1:00"),
+                y = min_t + (max_t - min_t) / 2),
+            label = "Delta T") +
+  labs(
+    title = "Benzoic Acid Combustion",
+    x = "Time",
+    y = "Temperature (C)"
+  )
+benzoic_acid_plot
+
+c_v <- -(delta_h_BA - gas_constant * temp * delta_n + delta_u_wire) / delta_t
+```
+
+$C_v = -\frac{\Delta H(BA)\ -\ RT\Delta n\ +\ \Delta U (Wire)}{\Delta T}$
+
+$C_v=$ `r c_v` J/K
+
+\newpage
+
+*Naphthalene*
+\newline
+
+```{r}
+m_wire <- 0.0153
+m_wire_left <- 0.0136
+m_wire_combusted <- m_wire - m_wire_left
+m_wire_pellet <- 0.5748
+m_pellet <- m_wire_pellet - m_wire
+ratio_mol_gas <- 1.5
+molar_mass_naph <- 128.171
+
+time_combustion = hms("1:31:40")
+```
+
+Mass of wire = `r m_wire` g
+
+Mass of wire left = `r m_wire_left` g
+
+Mass of wire combusted = `r m_wire_combusted` g
+
+Mass of wire + pellet = `r m_wire_pellet` g
+
+Mass of pellet = `r m_pellet` g
+
+```{r echo=FALSE}
+delta_h_ <- m_pellet * -26435.8
+delta_u_wire <- m_wire_combusted * -5858
+
+mol_naph <- m_pellet / molar_mass_naph
+mol_gas_net <- 2
+delta_n <- mol_gas_net * mol_BA
+```
+
+$\Delta U (wire) =$ `r m_wire_combusted` g * -5858 J/g = `r delta_u_wire` J
+
+$C_{10} H_8(s) + 12O_2 (g) \rightarrow 10CO_2(g) + 4H_2 O(g)$
+
+Moles of naphthalene = `r mol_BA`
+
+Moles of net gas produced per mole of naphthalene = 2
+
+$\Delta n$ = 2 * Moles of naphthalene = `r delta_n`
+
+```{r, echo = FALSE}
+
+max_row <- naphthalene %>%
+  arrange(desc(temperature)) %>%
+  head(1)
+max <- max_row[['time']]
+
+naphthalene_cooling <- naphthalene %>%
+  filter(time > max)
+
+cooling_m <- lm(temperature ~ time, data = naphthalene_cooling)
+naphthalene <- naphthalene %>%
+  mutate(
+    pred_temp = predict(cooling_m, naphthalene)
+  )
+
+combustion <- naphthalene %>%
+  filter(time == time_combustion)
+max_t <- combustion[['pred_temp']]
+min_t <- combustion[['temperature']]
+delta_t <- max_t - min_t
+
+naphthalene_plot <- ggplot(data = naphthalene) +
+  geom_point(aes(x = time, y = temperature)) +
+  geom_point(aes(x = time, y = pred_temp), color = "blue") +
+  geom_segment(
+    aes(x = time_combustion,
+        y = min_t,
+        xend = time_combustion,
+        yend = max_t),
+    arrow = arrow()
+  ) +
+  geom_text(aes(x = time_combustion - ms("0:30"),
+                y = min_t + (max_t - min_t) / 2),
+            label = "Delta T") +
+  labs(
+    title = "Naphthalene Combustion",
+    x = "Time",
+    y = "Temperature (C)"
+  )
+naphthalene_plot
+
+delta_h_naph = - delta_t * c_v + gas_constant * temp * delta_n - delta_u_wire
+
+delta_h_naph_molar = delta_h_naph / mol_naph
+```
+
+$\Delta H(N) = -\Delta TC_v + RT\Delta n - \Delta U (wire)$
+
+$\Delta H(N)=$ `r delta_h_naph` J
+
+$\Delta \tilde H (N) = \frac {\Delta H(N)}{moles\ naphthalene}$
+
+$\Delta \tilde H (N)=$ `r delta_h_naph_molar` J/mol
+
+\newpage
+
+*Gummy Bear*
+\newline
+
+```{r}
+m_wire <- 0.0162
+m_wire_left <- 0.0080
+m_wire_combusted <- m_wire - m_wire_left
+m_wire_pellet <- 2.2202
+m_pellet <- m_wire_pellet - m_wire
+
+time_combustion = hms("1:59:20")
+```
+
+Mass of wire = `r m_wire` g
+
+Mass of wire left = `r m_wire_left` g
+
+Mass of wire combusted = `r m_wire_combusted` g
+
+Mass of wire + gummy bear = `r m_wire_pellet` g
+
+Mass of gummy bear = `r m_pellet` g
+
+```{r echo=FALSE}
+delta_h_ <- m_pellet * -26435.8
+delta_u_wire <- m_wire_combusted * -5858
+```
+
+$\Delta U (wire) =$ `r m_wire_combusted` g * -5858 J/g = `r delta_u_wire` J
+
+```{r, echo = FALSE}
+
+max_row <- gummy_bear %>%
+  arrange(desc(temperature)) %>%
+  head(1)
+max <- max_row[['time']]
+
+gummy_bear_cooling <- gummy_bear %>%
+  filter(time > max)
+
+cooling_m <- lm(temperature ~ time, data = gummy_bear_cooling)
+gummy_bear <- gummy_bear %>%
+  mutate(
+    pred_temp = predict(cooling_m, gummy_bear)
+  )
+
+combustion <- gummy_bear %>%
+  filter(time == time_combustion)
+max_t <- combustion[['pred_temp']]
+min_t <- combustion[['temperature']]
+delta_t <- max_t - min_t
+
+gummy_bear_plot <- ggplot(data = gummy_bear) +
+  geom_point(aes(x = time, y = temperature)) +
+  geom_point(aes(x = time, y = pred_temp), color = "blue") +
+  geom_segment(
+    aes(x = time_combustion,
+        y = min_t,
+        xend = time_combustion,
+        yend = max_t),
+    arrow = arrow()
+  ) +
+  geom_text(aes(x = time_combustion - ms("0:30"),
+                y = min_t + (max_t - min_t) / 2),
+            label = "Delta T") +
+  labs(
+    title = "Gummy Bear Combustion",
+    x = "Time",
+    y = "Temperature (C)"
+  )
+gummy_bear_plot
+
+delta_u <- - delta_t * c_v - delta_u_wire
+
+```
+
+$\Delta U(bear) = -\Delta TC_v - \Delta U (wire)$
+
+$\Delta U(bear)=$ `r delta_u` J
