@@ -1,0 +1,188 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Calorimetry Lab Report},
+  pdfauthor={Andrés Peña},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\title{Calorimetry Lab Report}
+\author{Andrés Peña}
+\date{3/2/2022}
+
+\begin{document}
+\maketitle
+
+\begin{quote}
+\hypertarget{heat-capacity-of-the-system}{%
+\subsection{Heat capacity of the
+system}\label{heat-capacity-of-the-system}}
+\end{quote}
+
+Mass of wire = 0.0185 g
+
+Mass of wire left = 0.0079 g
+
+Mass of wire combusted = 0.0106 g
+
+Mass of wire + pellet = 1.0126 g
+
+Mass of pellet = 0.9941 g
+
+\(\Delta H_c (BA) = 0.9941g\ *\ -26435.8\ J/g =\)
+\ensuremath{-2.6279829\times 10^{4}} J
+
+\(\Delta U (wire) =\) 0.0106 g * -5858 J/g = -62.0948 J
+
+\(C_6 H_5 COOH(s) + 7.5O_2 (g) \rightarrow 7CO_2(g) + 3H_2 O(g)\)
+
+Moles of benzoic acid = 0.0081484
+
+Moles of net gas produced per mole of benzoic acid = 2.5
+
+\(\Delta n\) = 2.5 * Moles of benzoic acid = 0.0203709
+
+\(\Delta U(BA) = \Delta H(BA) - RT \Delta\ n\) =
+\ensuremath{-2.6330336\times 10^{4}} J
+
+\includegraphics{calorimetry_lab_report_files/figure-latex/unnamed-chunk-3-1.pdf}
+
+\(C_v = -\frac{\Delta H(BA)\ -\ RT\Delta n\ +\ \Delta U (Wire)}{\Delta T}\)
+
+\(\Delta T=\) 2.5858321 K
+
+\(C_v=\) \ensuremath{1.0206552\times 10^{4}} J/K
+
+\newpage
+
+\begin{quote}
+\hypertarget{naphthalene}{%
+\subsection{Naphthalene}\label{naphthalene}}
+\end{quote}
+
+Mass of wire = 0.0153 g
+
+Mass of wire left = 0.0136 g
+
+Mass of wire combusted = 0.0017 g
+
+Mass of wire + pellet = 0.5748 g
+
+Mass of pellet = 0.5595 g
+
+\(\Delta U (wire) =\) 0.0017 g * -5858 J/g = -9.9586 J
+
+\(C_{10} H_8(s) + 12O_2 (g) \rightarrow 10CO_2(g) + 4H_2 O(g)\)
+
+Moles of naphthalene = 0.0081484
+
+Moles of net gas produced per mole of naphthalene = 2
+
+\(\Delta n\) = 2 * Moles of naphthalene = 0.0162967
+
+\includegraphics{calorimetry_lab_report_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+\(\Delta H(N) = -\Delta TC_v + RT\Delta n - \Delta U (wire)\)
+
+\(\Delta T=\) 2.0925538 K
+
+\(\Delta H(N)=\) \ensuremath{-2.1307396\times 10^{4}} J
+
+\(\Delta \tilde H (N) = \frac {\Delta H(N)}{moles\ naphthalene}\)
+
+\(\Delta \tilde H (N)=\) \ensuremath{-4.8811264\times 10^{6}} J/mol
+
+\newpage
+
+\begin{quote}
+\hypertarget{gummy-bear}{%
+\subsection{Gummy Bear}\label{gummy-bear}}
+\end{quote}
+
+Mass of wire = 0.0162 g
+
+Mass of wire left = 0.008 g
+
+Mass of wire combusted = 0.0082 g
+
+Mass of wire + gummy bear = 2.2202 g
+
+Mass of gummy bear = 2.204 g
+
+\(\Delta U (wire) =\) 0.0082 g * -5858 J/g = -48.0356 J
+
+\includegraphics{calorimetry_lab_report_files/figure-latex/unnamed-chunk-9-1.pdf}
+
+\(\Delta U(bear) = -\Delta TC_v - \Delta U (wire)\)
+
+\(\Delta T=\) 3.1840326 K
+
+\(\Delta U(bear)=\) \ensuremath{-3.244996\times 10^{4}} J
+
+\begin{quote}
+\hypertarget{uncertainty-in-t}{%
+\subsection{Uncertainty in T}\label{uncertainty-in-t}}
+\end{quote}
+
+\begin{verbatim}
+## [1] 0.0001062857
+\end{verbatim}
+
+\end{document}

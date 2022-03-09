@@ -19,8 +19,7 @@ naphthalene <- read_csv("naphthalene.csv")
 gummy_bear <- read_csv("gummy bear.csv")
 ```
 
-*Heat capacity of the system*
-\newline
+> ## Heat capacity of the system
 
 ```{r}
 m_wire <- 0.0185
@@ -58,7 +57,7 @@ delta_u_BA <- delta_h_BA - gas_constant * temp * delta_n
 
 $\Delta H_c (BA) = 0.9941g\ *\ -26435.8\ J/g =$ `r delta_h_BA` J
 
-$\Delta U (wire) = 0.0185\ g\ * -5858\ J/g =$ `r delta_u_wire` J
+$\Delta U (wire) =$ `r m_wire_combusted` g * -5858 J/g = `r delta_u_wire` J
 
 $C_6 H_5 COOH(s) + 7.5O_2 (g) \rightarrow 7CO_2(g) + 3H_2 O(g)$
 
@@ -118,12 +117,13 @@ c_v <- -(delta_h_BA - gas_constant * temp * delta_n + delta_u_wire) / delta_t
 
 $C_v = -\frac{\Delta H(BA)\ -\ RT\Delta n\ +\ \Delta U (Wire)}{\Delta T}$
 
+$\Delta T=$ `r delta_t` K
+
 $C_v=$ `r c_v` J/K
 
 \newpage
 
-*Naphthalene*
-\newline
+> ## Naphthalene
 
 ```{r}
 m_wire <- 0.0153
@@ -215,6 +215,8 @@ delta_h_naph_molar = delta_h_naph / mol_naph
 
 $\Delta H(N) = -\Delta TC_v + RT\Delta n - \Delta U (wire)$
 
+$\Delta T=$ `r delta_t` K
+
 $\Delta H(N)=$ `r delta_h_naph` J
 
 $\Delta \tilde H (N) = \frac {\Delta H(N)}{moles\ naphthalene}$
@@ -223,8 +225,7 @@ $\Delta \tilde H (N)=$ `r delta_h_naph_molar` J/mol
 
 \newpage
 
-*Gummy Bear*
-\newline
+> ## Gummy Bear
 
 ```{r}
 m_wire <- 0.0162
@@ -301,4 +302,18 @@ delta_u <- - delta_t * c_v - delta_u_wire
 
 $\Delta U(bear) = -\Delta TC_v - \Delta U (wire)$
 
+$\Delta T=$ `r delta_t` K
+
 $\Delta U(bear)=$ `r delta_u` J
+
+> ## Uncertainty in T
+
+```{r}
+# use benzoic acid data to get uncertainty in T at the end; assume it's the same
+# throughout
+
+end_t_BA <- benzoic_acid %>%
+  filter(time > ms("50:00"))
+variance_t <- var(end_t_BA$temperature)
+variance_t
+```
