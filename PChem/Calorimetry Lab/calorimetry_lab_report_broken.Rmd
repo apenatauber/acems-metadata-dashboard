@@ -19,7 +19,7 @@ naphthalene <- read_csv("naphthalene.csv")
 gummy_bear <- read_csv("gummy bear.csv")
 ```
 
->> ## Heat capacity of the system
+> ## Heat capacity of the system
 
 ```{r}
 m_wire <- 0.0185
@@ -81,6 +81,7 @@ benzoic_acid_cooling <- benzoic_acid %>%
   filter(time > max)
 
 cooling_m <- lm(temperature ~ time, data = benzoic_acid_cooling)
+summary(cooling_m)
 benzoic_acid <- benzoic_acid %>%
   mutate(
     pred_temp = predict(cooling_m, benzoic_acid)
@@ -119,11 +120,11 @@ $C_v = -\frac{\Delta H(BA)\ -\ RT\Delta n\ +\ \Delta U (Wire)}{\Delta T}$
 
 $\Delta T=$ `r delta_t` K
 
-$C_v=$ `r signif(c_v, 5)` $\pm$ 8 J/K
+$C_v=$ `r c_v` J/K
 
 \newpage
 
->> ## Naphthalene
+> ## Naphthalene
 
 ```{r}
 m_wire <- 0.0153
@@ -221,11 +222,11 @@ $\Delta H(N)=$ `r delta_h_naph` J
 
 $\Delta \tilde H (N) = \frac {\Delta H(N)}{moles\ naphthalene}$
 
-$\Delta \tilde H (N)=$ `r signif(delta_h_naph_molar, 4)` $\pm$ 4000 J/mol
+$\Delta \tilde H (N)=$ `r delta_h_naph_molar` J/mol
 
 \newpage
 
->> ## Gummy Bear
+> ## Gummy Bear
 
 ```{r}
 m_wire <- 0.0162
@@ -304,4 +305,16 @@ $\Delta U(bear) = -\Delta TC_v - \Delta U (wire)$
 
 $\Delta T=$ `r delta_t` K
 
-$\Delta U(bear)=$ `r signif(delta_u, 3)` $\pm$ 30 J
+$\Delta U(bear)=$ `r delta_u` J
+
+> ## Uncertainty in T
+
+```{r}
+# use benzoic acid data to get uncertainty in T at the end; assume it's the same
+# throughout
+
+end_t_BA <- benzoic_acid %>%
+  filter(time > ms("50:00"))
+variance_t <- var(end_t_BA$temperature)
+variance_t
+```
