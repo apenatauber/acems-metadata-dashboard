@@ -210,7 +210,7 @@ naphthalene_plot
 
 delta_h_naph = - delta_t * c_v + gas_constant * temp * delta_n - delta_u_wire
 
-delta_h_naph_molar = delta_h_naph / mol_naph
+delta_h_naph_molar = delta_h_naph / mol_naph / 1000
 ```
 
 $\Delta H(N) = -\Delta TC_v + RT\Delta n - \Delta U (wire)$
@@ -221,7 +221,7 @@ $\Delta H(N)=$ `r delta_h_naph` J
 
 $\Delta \tilde H (N) = \frac {\Delta H(N)}{moles\ naphthalene}$
 
-$\Delta \tilde H (N)=$ `r signif(delta_h_naph_molar, 4)` $\pm$ 4000 J/mol
+$\Delta \tilde H (N)=$ `r signif(delta_h_naph_molar, 4)` $\pm$ 4 kJ/mol
 
 \newpage
 
@@ -296,7 +296,9 @@ gummy_bear_plot <- ggplot(data = gummy_bear) +
   )
 gummy_bear_plot
 
-delta_u <- - delta_t * c_v - delta_u_wire
+delta_u <- (-delta_t * c_v - delta_u_wire) / 1000
+
+kcal_bear <- delta_u / 4.184
 
 ```
 
@@ -304,4 +306,12 @@ $\Delta U(bear) = -\Delta TC_v - \Delta U (wire)$
 
 $\Delta T=$ `r delta_t` K
 
-$\Delta U(bear)=$ `r signif(delta_u, 3)` $\pm$ 30 J
+$\Delta U(bear)=$ `r signif(delta_u, 3)` $\pm$ 0.030 kJ = `r signif(kcal_bear, 3)` $\pm$ 0.01 kcal
+
+\newpage
+
+>> ## Discussion
+
+Our obtained value of `r signif(delta_h_naph_molar, 4)` kJ/mol for $\Delta H$ of naphthalene was close to the literature value of -5651 kJ/mol, but still off by `r signif(-5651-delta_h_naph_molar, 4)` kJ/mol (`r format(abs((-5651-delta_h_naph_molar)/5651*100), digits=3)`%). This is outside the uncertainty range ($\pm$ 4 kJ/mol) of our result. It may have been that some of the naphthalene flaked off of our pellet as we were loading it in, leading to a smaller total enthalpy but higher calculated amount of naphthalene. Alternatively, there was inadequate oxygenation of the combustion chamber, or inconsistent oxygenation between the two runs; or, inconsistent amounts of water in the bomb, leading to different heat capacities.
+
+For the gummy bear, we measured a change in energy of `r signif(kcal_bear, 3)` kcal. Our nutritional information gave us 140 kcal / 17 gummy bears = `r format(-140/17, digits = 3)` kcal. This matches our result quite nicely, with a difference of `r signif(abs(kcal_bear - -140/17), 3)` kcal (`r signif(abs((kcal_bear - 140/17)/(140/17)), 3)`%). Some of this difference may have been due to the energy lost in expanding the system, due to the conversion of solid to gas; since we do not know the formulas for combustion of the gummy bear, we could not account for this, and thus the value we obtained is expected to be lower than the true chemical energy contained in the gummy bear. We also do not know the method used to calculate the calories in the bear. It is possible the measurement on the bag is inexact (no uncertainty is reported) and thus our uncertainty ranges actually overlap nicely.
