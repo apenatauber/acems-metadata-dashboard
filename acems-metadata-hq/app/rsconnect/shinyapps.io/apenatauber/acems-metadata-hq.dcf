@@ -1,0 +1,13 @@
+name: acems-metadata-hq
+title: acems-metadata-hq
+username:
+account: apenatauber
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6269215
+bundleId: 5908809
+url: https://apenatauber.shinyapps.io/acems-metadata-hq/
+when: 1652652222.78472
+lastSyncTime: 1652652222.78475
+asMultiple: FALSE
+asStatic: FALSE

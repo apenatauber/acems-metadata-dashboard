@@ -1,0 +1,39 @@
+chief_complaint,category,nature
+Abrasion,General Injury,Trauma
+Acute Abdominal Pain,Internal Pain,Medical
+Allergic Reaction,Allergic Reaction,Medical
+Anaphylaxis,Allergic Reaction,Medical
+Behavioral/Altered Mental Status,Behavorial/Psychiatric,Behavioral
+Body Aches,Internal Pain,Medical
+Burn,General Injury,Trauma
+Cardiovascular Emergency,Cardiovascular/Respiratory,Medical
+Chest Pain,Cardiovascular/Respiratory,Medical
+Diabetic Emergency,Metabolic/Gastrointestinal,Medical
+Dizziness,Neurological,Medical
+Ear Infection,Pathogenic,Medical
+Environmental Hazard,Environmental,Trauma
+EtOH/Drug Related,Alcohol/Drugs,Medical
+Eye Infection/Inflammation,Pathogenic,Medical
+Fall,General Injury,Trauma
+Flu-Like Symptoms,Pathogenic,Medical
+Food Poisoning,Metabolic/Gastrointestinal,Medical
+Gastrointestinal,Metabolic/Gastrointestinal,Medical
+Icepack Requested,Other,Unknown
+Insect,Environmental,Trauma
+Laceration/Hemorrhage,General Injury,Trauma
+Migraine,Neurological,Medical
+Motor Vehicle Accident,General Injury,Trauma
+Musculoskeletal Injury,General Injury,Trauma
+No Patient Found,Other,Unknown
+Other,Other,Unknown
+Other Injury,General Injury,Trauma
+Other Medical,Other,Medical
+Overdose (non-EtOH),Alcohol/Drugs,Medical
+Panic Attack,Behavorial/Psychiatric,Behavioral
+Rash/Hives,Dermatological,Medical
+Respiratory Distress,Cardiovascular/Respiratory,Medical
+Seizure,Neurological,Medical
+Soft Tissue Injury,General Injury,Trauma
+Stroke,Neurological,Medical
+Syncope,Neurological,Medical
+Unresponsive,Neurological,Unknown
