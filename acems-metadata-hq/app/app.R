@@ -4,6 +4,7 @@ library(shiny)
 library(ggplot2)
 library(zoo)
 library(lubridate)
+library(viridis)
 
 library(leaflet)
 library(sp)
@@ -79,94 +80,25 @@ ui <- navbarPage(title = "ACEMS", theme = shinytheme("flatly"),
            includeHTML("data/info_tab.html")
   ),
   tabPanel("Map",
-           leafletOutput("map", height= "90vh"),
-           absolutePanel(top = 95, left = 70, width = 250,
-                         wellPanel(
-                           selectInput("select_year", label = "Academic year:",
-                                       choices = c("All", unique(acems$academic_year))),
-                           radioButtons("select_semester", label = "Semester:",
-                                        choices = c("Both", unique(acems$semester))),
-                           hr(style = "border-top: 1px solid #4f4f4f;"),
-                           selectInput("select_category", label = "Category:",
-                                       choices = c("All", sort(unique(acems$category)))),
-                           selectInput("select_cc", label = "Chief complaint(s):",
-                                       choices = c("All", sort(unique(acems$chief_complaint)))),
-                           radioButtons("select_var", label = "Show:",
-                                        choices = c("Call count" = "absolute",
-                                                    "Percent of calls in that area
-                               (in selected year & semester)" = "percent")),
-                           radioButtons("select_scale", label = "Color scale:",
-                                        choices = c("Limit to relevant range", "Show whole range"))
-                         )
-           )
-  ),
-  tabPanel("Bar Chart",
-           #add theme
-           # theme = shinytheme("flatly"),
-           #add options for filtering
-           radioButtons(
-             "radio",
-             label = h3("Select filtering"),
-             choices = list(
-               "Nature of Call" = 1,
-               "Category" = 2,
-               "Shift Type" = 3,
-               "Weekend/Weekday" = 4,
-               "Result" = 5
-             ),
-             selected = 1
-           ),
-           #add options for count/percent for barcharts
-           radioButtons(
-             "count_percent",
-             label = "Show:",
-             choices = c("Call Count" = "count",
-                         "Percent of Calls" = "percent")
-           ),
-           # dropdown for academic year
-           sidebarLayout(sidebarPanel(
-             width = 2,
-             # Select academic year
-             selectInput(
-               inputId = "academic_year",
-               label =  "Choose academic year:",
-               selected = "All",
-               choices = c("All", acems_combined$academic_year)
-             )
-           ),
-           mainPanel()),
-           
-           # dropdown for month of call
            sidebarLayout(
-             sidebarPanel(
-               width = 2,
-               # Select month of call
-               selectInput(
-                 inputId = "month_of_call",
-                 label =  "Choose month:",
-                 selected = "",
-                 choices = c("All", "Months" = month_choices)
-               )
-             ),
-             # plot first bar chart based on month(s)
-             mainPanel(width = 10, plotlyOutput("BarChart1"))
-           ),
-           
-           # dropdown for semester of call
-           sidebarLayout(
-             sidebarPanel(
-               width = 2,
-               # Select semester of call
-               selectInput(
-                 inputId = "semester",
-                 label =  "Choose semester:",
-                 selected = "",
-                 choices = c("All", acems_combined$semester)
-               )
-             ),
-             # plot second bar chart based on semester(s)
-             mainPanel(width = 10, plotlyOutput("BarChart2"))
-           )
+             sidebarPanel(selectInput("select_year", label = "Academic year:",
+                                      choices = c("All", unique(acems$academic_year))),
+                          radioButtons("select_semester", label = "Semester:",
+                                       choices = c("Both", unique(acems$semester))),
+                          hr(style = "border-top: 1px solid #4f4f4f;"),
+                          selectInput("select_category", label = "Category:",
+                                      choices = c("All", sort(unique(acems$category)))),
+                          selectInput("select_cc", label = "Chief complaint(s):",
+                                      choices = c("All", sort(unique(acems$chief_complaint)))),
+                          radioButtons("select_var", label = "Show:",
+                                       choices = c("Call count" = "absolute",
+                                                   "Percent of calls in selected category & chief complaint" = "percent")),
+                          radioButtons("select_scale", label = "Color scale:",
+                                       choices = c("Limit to relevant range", "Show whole range"))
+            ),
+            mainPanel(leafletOutput("map", height = "90vh"),
+                      plotOutput("map_barchart"))
+          )
   )
 )
 
@@ -174,8 +106,7 @@ ui <- navbarPage(title = "ACEMS", theme = shinytheme("flatly"),
 server <- function(session, input, output) {
   
   # Tab 1 map
-  
-  
+
   ## translate input "All" or "Both" into all values of the
   ## respective filter variable
   
@@ -243,15 +174,15 @@ server <- function(session, input, output) {
       )
   })
   
-  # update map when chief complaint or variable type are changed
-  observe({
-    
-    # input options
-    absolute <- input$select_var == "absolute"
-    whole_range <- input$select_scale == "Show whole range"
-    
-    # wrangle call data for use in map
-    location_data <- acems %>%
+  # map options
+  
+  absolute <- reactive({input$select_var == "absolute"})
+  whole_range <- reactive({input$select_scale == "Show whole range"})
+  
+  # wrangle call data for use in map
+  
+  location_data <- reactive({
+    acems %>%
       group_by(location) %>%
       summarize(total_calls = sum(academic_year %in% selected_academic_year() &
                                     semester %in% selected_semester()),
@@ -260,7 +191,33 @@ server <- function(session, input, output) {
                                   category %in% selected_category() &
                                   chief_complaint %in% selected_chief_complaint())) %>%
       mutate(percent_calls = num_calls / total_calls * 100.0)
-    
+  })
+  
+  # establish domain of data
+  domain <- reactive({
+    if (whole_range()) {
+      # domain should cover entire range of possible data (so that colors can be
+      # to each other)
+      if (absolute()) c(0,max_per_location)
+      else c(0,100)
+    }
+    else {
+      # domain should cover only the relevant range of data (so it is easier to
+      # discern differences)
+      if (absolute()) location_data()$num_calls
+      else location_data()$percent_calls
+    }
+  })
+  
+  # palette for map and bar chart
+  pal <- reactive({colorNumeric("inferno", domain = NULL)})
+  
+  # legend needs reversed palette so numbers go from low / bottom to
+  # high / top
+  pal_legend <- reactive({colorNumeric("inferno", domain = NULL, reverse = TRUE)})
+  
+  # update map when chief complaint or variable type are changed
+  observe({
     
     # create Spatial Polygon DF from coordinates and add data
     locations_spolydf <- SpatialPolygonsDataFrame(
@@ -268,7 +225,7 @@ server <- function(session, input, output) {
       SpatialPolygons(map2(locations$coords,
                            c(1:nrow(locations)),
                            ~Polygons(list(Polygon(.x)), ID = .y))),
-      data = location_data)
+      data = location_data())
     
     # labels for polygons
     # Location
@@ -281,31 +238,13 @@ server <- function(session, input, output) {
       locations_spolydf$percent_calls
     ) %>% lapply(htmltools::HTML)
     
-    # color palette for displaying call data
-    if (whole_range) {
-      # domain should cover entire range of possible data (so that colors can be
-      # to each other)
-      domain <- if (absolute) c(0,max_per_location)
-      else c(0,100)
-    }
-    else {
-      # domain should cover only the relevant range of data (so it is easier to
-      # discern differences)
-      domain <- if (absolute) location_data$num_calls
-      else location_data$percent_calls
-    }
-    pal <- colorNumeric("inferno", domain = domain)
-    # legend needs reversed palette so numbers go from low / bottom to
-    # high / top
-    pal_legend <- colorNumeric("inferno", domain = domain, reverse = TRUE)
-    
     # add polygons and legend based on the user's selection
     leafletProxy("map") %>%
       clearShapes() %>%
       clearControls() %>%
       addPolygons(data = locations_spolydf,
-                  fillColor = if (absolute) ~pal(num_calls)
-                  else ~pal(percent_calls),
+                  fillColor = if (absolute()) ~pal()(num_calls)
+                  else ~pal()(percent_calls),
                   weight = 1.5,
                   opacity = 0.8,
                   color = "black",
@@ -322,197 +261,32 @@ server <- function(session, input, output) {
                     style = list("font-weight" = "normal", padding = "3px 8px"),
                     textsize = "12px",
                     direction = "right")) %>%
-      addLegend(pal = pal_legend, values = domain,
+      addLegend(pal = pal_legend(), values = domain(),
                 opacity = 0.7,
-                title = if (absolute) "Number</br>of calls"
-                else "% of calls</br>at location",
+                title = if (absolute()) "Number</br>of calls" else "% of calls",
                 position = "bottomright",
-                labFormat = labelFormat(suffix = if (absolute) "" else "%",
+                labFormat = labelFormat(suffix = if (absolute()) "" else "%",
                                         # high -> low
                                         transform = function(x) sort(x, decreasing = TRUE)))
   })
   
-  # Tab 2 bar chart
+  # bar chart showing location data
   
-  # function to dynamically filter based on academic year(s)
-  filter_acyear <- reactive({
-    acems2 <- acems_combined
-    # filter data based on specified academic year(s)
-    if (input$academic_year != "All") {
-      acems2 <- acems2 %>%
-        filter(academic_year == input$academic_year)
-    }
-    acems2
+  output$map_barchart <- renderPlot({
+    location_data() %>%
+      ggplot(aes(x = location,
+                 y = if (absolute()) num_calls else percent_calls,
+                 fill = if (absolute()) num_calls else percent_calls)) +
+      geom_col() +
+      scale_fill_viridis(option = "inferno") +
+      labs(
+        x = NULL,
+        y = if (absolute()) "Number of calls" else "% of calls"
+      ) +
+      theme(legend.position = "none") +
+      coord_flip()
   })
   
-  # filter based on users' option of filtering for month(s)
-  acems_filtered_month <- reactive({
-    acems2 <- filter_acyear()
-    # filter data based on specified month(s)
-    if (input$month_of_call != "All") {
-      acems2 <- acems2 %>%
-        filter(month_of_call == input$month_of_call)
-    }
-    # filter based on nature of call
-    if (input$radio == 1) {
-      acems2 <- acems2 %>%
-        group_by(month_of_call, nature) %>%
-        summarize(calls_per_month = n()) %>%
-        rename(variable = nature)
-    }
-    # filter based on category
-    else if (input$radio == 2) {
-      acems2 <- acems2 %>%
-        group_by(month_of_call, category) %>%
-        summarize(calls_per_month = n()) %>%
-        rename(variable = category)
-    }
-    # filter based on shift type
-    else if (input$radio == 3) {
-      acems2 <- acems2 %>%
-        group_by(month_of_call, shift_type) %>%
-        summarize(calls_per_month = n()) %>%
-        rename(variable = shift_type)
-    }
-    # filter based on weekend/weekday
-    else if (input$radio == 4) {
-      acems2 <- acems2 %>%
-        group_by(month_of_call, is_weekend) %>%
-        summarize(calls_per_month = n()) %>%
-        rename(variable = is_weekend)
-    }
-    # filter based on result
-    else if (input$radio == 5) {
-      acems2 <- acems2 %>%
-        group_by(month_of_call, result) %>%
-        summarize(calls_per_month = n()) %>%
-        rename(variable = result)
-    }
-    acems2
-  })
-  
-  # filter based on users' option of filtering for semester(s)
-  acems_filtered_semester <- reactive({
-    acems2 <- filter_acyear()
-    # filter data based on specified semester(s)
-    if (input$semester != "All") {
-      acems2 <- acems2 %>%
-        filter(semester == input$semester)
-    }
-    # filter based on nature of call
-    if (input$radio == 1) {
-      acems2 <- acems2 %>%
-        group_by(semester, nature) %>%
-        summarize(calls_per_semester = n()) %>%
-        rename(variable = nature)
-    }
-    # filter based on category
-    else if (input$radio == 2) {
-      acems2 <- acems2 %>%
-        group_by(semester, category) %>%
-        summarize(calls_per_semester = n()) %>%
-        rename(variable = category)
-    }
-    # filter based on shift type
-    else if (input$radio == 3) {
-      acems2 <- acems2 %>%
-        group_by(semester, shift_type) %>%
-        summarize(calls_per_semester = n()) %>%
-        rename(variable = shift_type)
-    }
-    # filter based on weekend/weekday
-    else if (input$radio == 4) {
-      acems2 <- acems2 %>%
-        group_by(semester, is_weekend) %>%
-        summarize(calls_per_semester = n()) %>%
-        rename(variable = is_weekend)
-    }
-    # filter based on result
-    else if (input$radio == 5) {
-      acems2 <- acems2 %>%
-        group_by(semester, result) %>%
-        summarize(calls_per_semester = n()) %>%
-        rename(variable = result)
-    }
-    acems2
-  })
-  
-  # update months that appear
-  # in drop down based on academic year
-  observeEvent(input$academic_year, {
-    updateSelectInput(
-      session,
-      inputId = "month_of_call",
-      label =  "Choose month:",
-      selected = "All",
-      choices = c("All", "Months" = list(
-        arrange(filter_acyear(), month_of_call)$month_of_call
-      ))
-    )
-  })
-  
-  
-  # first bar chart
-  # breakdown of acems calls based on
-  # academic year, month, and users' filtering
-  output$BarChart1 <- renderPlotly({
-    ggplot(
-      acems_filtered_month(),
-      aes(x = month_of_call,
-          y = calls_per_month,
-          fill = variable)
-    ) +
-      {
-        if (input$count_percent == "percent")
-          scale_y_continuous(labels = scales::percent)
-      } +
-      {
-        # show count or percent based on users' input
-        if (input$count_percent == "percent")
-          geom_col(position = "fill")
-        else
-          geom_col()
-      } +
-      coord_flip() +
-      scale_fill_brewer(palette = "Paired") +
-      labs(x = "Month of Call",
-           y = "Number of Calls",
-           title = "ACEMS Calls per Month") +
-      theme(panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank()) +
-      guides(fill = guide_legend(title = names[as.numeric(input$radio)]))
-  })
-  
-  # second bar chart
-  # breakdown of acems calls based on
-  # academic year, semester, and users' filtering
-  output$BarChart2 <- renderPlotly({
-    ggplot(
-      acems_filtered_semester(),
-      aes(x = semester,
-          y = calls_per_semester,
-          fill = variable)
-    ) +
-      {
-        if (input$count_percent == "percent")
-          scale_y_continuous(labels = scales::percent)
-      } +
-      {
-        # show count or percent based on users' input
-        if (input$count_percent == "percent")
-          geom_col(position = "fill")
-        else
-          geom_col()
-      }  +
-      coord_flip() +
-      scale_fill_brewer(palette = "Paired") +
-      labs(x = "Semester",
-           y = "Number of Calls",
-           title = "ACEMS Calls per Semester") +
-      theme(panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank()) +
-      guides(fill = guide_legend(title = names[as.numeric(input$radio)]))
-  })
 }
 
 
