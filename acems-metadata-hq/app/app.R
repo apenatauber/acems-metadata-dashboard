@@ -5,10 +5,9 @@ library(ggplot2)
 library(zoo)
 library(lubridate)
 library(viridis)
-
+library(stringr)
 library(leaflet)
 library(sp)
-
 library(tidyr)
 library(dplyr)
 library(shinythemes)
@@ -74,14 +73,15 @@ names <- c("Nature of Call",
            "Result")
 
 
-ui <- navbarPage(title = "ACEMS", theme = shinytheme("flatly"),
+ui <- navbarPage(title = "ACEMS", theme = shinytheme("cosmo"),
   tabPanel("Info",
            # info tab is populated with HTML file
            includeHTML("data/info_tab.html")
   ),
   tabPanel("Map",
            sidebarLayout(
-             sidebarPanel(selectInput("select_year", label = "Academic year:",
+             sidebarPanel(width = 3,
+                          selectInput("select_year", label = "Academic year:",
                                       choices = c("All", unique(acems$academic_year))),
                           radioButtons("select_semester", label = "Semester:",
                                        choices = c("Both", unique(acems$semester))),
@@ -96,8 +96,15 @@ ui <- navbarPage(title = "ACEMS", theme = shinytheme("flatly"),
                           radioButtons("select_scale", label = "Color scale:",
                                        choices = c("Limit to relevant range", "Show whole range"))
             ),
-            mainPanel(leafletOutput("map", height = "90vh"),
-                      plotOutput("map_barchart"))
+            mainPanel(width = 9,
+                      leafletOutput("map", height = "700px"))
+          ),
+          sidebarLayout(
+            sidebarPanel(width = 3,
+                         selectInput("select_sort", label = "Sort bar chart:",
+                                     choices = c("Regular order", "Descending"))),
+            mainPanel(width = 9,
+                      wellPanel(plotOutput("map_barchart")))
           )
   )
 )
@@ -105,11 +112,17 @@ ui <- navbarPage(title = "ACEMS", theme = shinytheme("flatly"),
 
 server <- function(session, input, output) {
   
-  # Tab 1 map
-
-  ## translate input "All" or "Both" into all values of the
-  ## respective filter variable
   
+  ### Tab 1 map
+  
+  
+  ## map options
+  
+  absolute <- reactive({input$select_var == "absolute"})
+  whole_range <- reactive({input$select_scale == "Show whole range"})
+
+  # translate input "All" or "Both" into all values of the
+  # respective filter variable
   selected_academic_year <- reactive({
     if (input$select_year == "All")
       unique(acems$academic_year)
@@ -134,8 +147,10 @@ server <- function(session, input, output) {
     else input$select_cc
   })
   
+  
   ## update selectors once certain filters have been chosen
   
+  # update semester selector
   observe({
     semesters <- acems %>%
       group_by(academic_year, semester) %>%
@@ -145,6 +160,7 @@ server <- function(session, input, output) {
                        choices = c("Both", unique(semesters$semester)))
   })
   
+  # update year selector
   observe({
     cc <- acems %>%
       group_by(chief_complaint, category) %>%
@@ -154,33 +170,10 @@ server <- function(session, input, output) {
                       choices = c("All", sort(cc$chief_complaint)))
   })
   
-  # base leaflet map (no polygons)
-  output$map <- renderLeaflet({
-    leaflet(options = leafletOptions(minZoom = 15, maxZoom = 20)) %>%
-      # set bounds and center to campus
-      setMaxBounds(-72.58, 42.42, -72.47, 42.34) %>%
-      setView(-72.521846, 42.371191, zoom = 15) %>%
-      # different terrain views
-      addProviderTiles(providers$OpenStreetMap.Mapnik,
-                       group = "Street Map View",
-                       options = providerTileOptions(opacity = 0.7)) %>%
-      addProviderTiles(providers$Esri.WorldImagery,
-                       group = "Terrain View",
-                       options = providerTileOptions(opacity = 0.7)) %>%
-      # terrain controls
-      addLayersControl(
-        baseGroups = c("Street Map View", "Terrain View"),
-        options = layersControlOptions(collapsed = FALSE)
-      )
-  })
   
-  # map options
-  
-  absolute <- reactive({input$select_var == "absolute"})
-  whole_range <- reactive({input$select_scale == "Show whole range"})
+  ## data wrangling and prep
   
   # wrangle call data for use in map
-  
   location_data <- reactive({
     acems %>%
       group_by(location) %>%
@@ -204,21 +197,46 @@ server <- function(session, input, output) {
     else {
       # domain should cover only the relevant range of data (so it is easier to
       # discern differences)
-      if (absolute()) location_data()$num_calls
-      else location_data()$percent_calls
+      if (absolute()) range(location_data()$num_calls)
+      else range(location_data()$percent_calls)
     }
   })
   
   # palette for map and bar chart
-  pal <- reactive({colorNumeric("inferno", domain = NULL)})
+  pal <- reactive({colorNumeric("inferno", domain = domain())})
   
   # legend needs reversed palette so numbers go from low / bottom to
   # high / top
-  pal_legend <- reactive({colorNumeric("inferno", domain = NULL, reverse = TRUE)})
+  pal_legend <- reactive({colorNumeric("inferno", domain = domain(), reverse = TRUE)})
   
-  # update map when chief complaint or variable type are changed
-  observe({
-    
+  
+  ## UI outputs
+  
+  # base leaflet map (no polygons)
+  output$map <- renderLeaflet({
+    leaf <- leaflet(options = leafletOptions(minZoom = 15, maxZoom = 20)) %>%
+      # set bounds and center to campus
+      setMaxBounds(-72.5169773138638, 42.3723787395415, -72.5169773138638, 42.3723787395415) %>%
+      setView(-72.5169773138638, 42.3723787395415, zoom = 15) %>%
+      # different terrain views
+      addProviderTiles(providers$OpenStreetMap.Mapnik,
+                       group = "Street Map View",
+                       options = providerTileOptions(opacity = 0.7)) %>%
+      addProviderTiles(providers$Esri.WorldImagery,
+                       group = "Terrain View",
+                       options = providerTileOptions(opacity = 0.7)) %>%
+      # terrain controls
+      addLayersControl(
+        baseGroups = c("Street Map View", "Terrain View"),
+        options = layersControlOptions(collapsed = FALSE)
+      )
+    # add polys but do not take dependencies so map doesn't redraw every time
+    # an input is changed
+    isolate(addLocationPolys(leaf))
+  })
+  
+  # add polygons based on selectors
+  addLocationPolys <- function(map) {
     # create Spatial Polygon DF from coordinates and add data
     locations_spolydf <- SpatialPolygonsDataFrame(
       # create spatial polygons from coordinates; ID is gathered from row #
@@ -239,7 +257,7 @@ server <- function(session, input, output) {
     ) %>% lapply(htmltools::HTML)
     
     # add polygons and legend based on the user's selection
-    leafletProxy("map") %>%
+    map %>%
       clearShapes() %>%
       clearControls() %>%
       addPolygons(data = locations_spolydf,
@@ -268,10 +286,15 @@ server <- function(session, input, output) {
                 labFormat = labelFormat(suffix = if (absolute()) "" else "%",
                                         # high -> low
                                         transform = function(x) sort(x, decreasing = TRUE)))
+  }
+  
+  # update polygons without redrawing map whenever selectors are changed
+  # (this does take dependencies on selectors)
+  observe({
+    addLocationPolys(leafletProxy("map"))
   })
   
   # bar chart showing location data
-  
   output$map_barchart <- renderPlot({
     location_data() %>%
       ggplot(aes(x = location,
@@ -283,7 +306,10 @@ server <- function(session, input, output) {
         x = NULL,
         y = if (absolute()) "Number of calls" else "% of calls"
       ) +
-      theme(legend.position = "none") +
+      scale_x_discrete(labels = function(x) str_replace(x, ' [(].*[)]', '')) +
+      theme_linedraw() +
+      theme(legend.position = "none",
+            text = element_text(size = 20)) +
       coord_flip()
   })
   
