@@ -88,17 +88,19 @@ acems$time_of_call <- hms(acems$time_of_call)
 # day or night shift
 acems <- acems %>% 
   mutate(hour_of_call = lubridate::hour(time_of_call)) %>%
-  mutate(shift_type = ifelse(
+  mutate(shift_ampm = ifelse(
     hour_of_call >= 8 & hour_of_call < 20,
     "AM", "PM")) %>%
-  select(-hour_of_call)
+  mutate(shift_busy = ifelse(
+    day_of_week %in% c("Friday", "Saturday") & shift_ampm == "PM",
+    "busy", "non-busy"))
 
-# convert shift_type to factor
-acems$shift_type <- as.factor(acems$shift_type) 
+acems$shift_ampm <- as.factor(acems$shift_ampm)
+acems$shift_busy <- as.factor(acems$shift_busy)
 
 # extract month of call
 acems <- acems %>%
-  mutate(month_of_call = lubridate::month(date_of_call, label = TRUE, abbr = FALSE))
+  mutate(month = lubridate::month(date_of_call, label = TRUE, abbr = FALSE))
 
 # month vectors based on semester
 spring = c("January", "February", "March", "April", "May", "June")
@@ -107,8 +109,8 @@ fall = c("August", "September", "October", "November", "December")
 # creating semester column
 acems <- acems %>%
 mutate(semester = case_when(
-         month_of_call %in% spring ~ "Spring" ,
-         month_of_call %in% fall ~ "Fall" ,
+         month %in% spring ~ "Spring" ,
+         month %in% fall ~ "Fall" ,
          TRUE ~ "NA"))
 
 # creating academic year column
