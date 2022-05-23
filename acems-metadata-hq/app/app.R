@@ -33,44 +33,17 @@ locations <- read.csv("data/locations.csv", header = FALSE) %>%
   select(-coord_num) %>%
   nest(coords = c(long, lat))
 
+acems$month <- factor(acems$month, levels = month.name)
+acems$day_of_week <- factor(acems$day_of_week,
+                            levels = c("Monday", "Tuesday", "Wednesday",
+                                       "Thursday", "Friday", "Saturday",
+                                       "Sunday"))
+
 # max number of calls in any one location
 max_per_location <- max(acems %>%
                           group_by(location) %>%
                           summarize(N = n()) %>%
                           select(N))
-
-
-
-#wrangling data for timeline tab
-
-# load data for chief complaint grouping
-acems_groups <- read.csv("data/chief_complaints_grouping.csv")
-
-# join data sets
-acems_combined <- acems %>%
-  inner_join(acems_groups, by = "chief_complaint")
-
-# rename and remove two columns
-acems_combined <- acems_combined %>%
-  select(-nature.x, -category.x) %>%
-  rename(nature = nature.y,
-         category = category.y)
-
-# create a list of months
-acems_combined$month_of_call <-
-  factor(x = acems_combined$month_of_call,
-         levels = month.name)
-
-# sort the months chronologically
-month_choices <-
-  list(arrange(acems_combined, month_of_call)$month_of_call)
-
-# list for updating legend title dynamically
-names <- c("Nature of Call",
-           "Category",
-           "Shift Type",
-           "Weekend/Weekday",
-           "Result")
 
 
 ui <- navbarPage(title = "ACEMS", theme = shinytheme("cosmo"),
@@ -104,8 +77,39 @@ ui <- navbarPage(title = "ACEMS", theme = shinytheme("cosmo"),
                          selectInput("select_sort", label = "Sort bar chart:",
                                      choices = c("Regular order", "Descending"))),
             mainPanel(width = 9,
-                      wellPanel(plotOutput("map_barchart")))
+                      plotOutput("map_barchart"))
           )
+  ),
+  tabPanel("Time Charts",
+           sidebarLayout(
+             sidebarPanel(
+               radioButtons("select_timeview", label = "Select view:",
+                            choices = c("Academic year" = "academic_year",
+                                        "Semester" = "semester",
+                                        "Month" = "month",
+                                        "Day of the week" = "day_of_week",
+                                        "Weekend/weekday" = "is_weekend",
+                                        "AM/PM Shift" = "shift_ampm",
+                                        "Busy/regular shift" = "shift_busy",
+                                        "Hour of call" = "hour_of_call")),
+               # varSelectInput("select_timeview", label = "var", acems),
+               selectInput("select_year", label = "Academic year:",
+                           choices = c("All", unique(acems$academic_year))),
+               radioButtons("select_semester", label = "Semester:",
+                            choices = c("Both", unique(acems$semester))),
+               hr(style = "border-top: 1px solid #4f4f4f;"),
+               selectInput("select_category", label = "Category:",
+                           choices = c("All", sort(unique(acems$category)))),
+               selectInput("select_cc", label = "Chief complaint(s):",
+                           choices = c("All", sort(unique(acems$chief_complaint)))),
+               radioButtons("select_var", label = "Show:",
+                            choices = c("Call count" = "absolute",
+                                        "Percent of calls in selected category & chief complaint" = "percent"))
+             ),
+             mainPanel(
+               plotOutput("time_barchart")
+             )
+           )
   )
 )
 
@@ -116,7 +120,7 @@ server <- function(session, input, output) {
   ### Tab 1 map
   
   
-  ## map options
+  ## options
   
   absolute <- reactive({input$select_var == "absolute"})
   whole_range <- reactive({input$select_scale == "Show whole range"})
@@ -184,6 +188,11 @@ server <- function(session, input, output) {
                                   category %in% selected_category() &
                                   chief_complaint %in% selected_chief_complaint())) %>%
       mutate(percent_calls = num_calls / total_calls * 100.0)
+  })
+  
+  # wrangle call data for use in time bar charts
+  time_data <- reactive({
+    
   })
   
   # establish domain of data
@@ -311,6 +320,12 @@ server <- function(session, input, output) {
       theme(legend.position = "none",
             text = element_text(size = 20)) +
       coord_flip()
+  })
+  
+  output$time_barchart <- renderPlot({
+    acems %>%
+      ggplot(aes_string(x = input$select_timeview)) +
+      geom_bar()
   })
   
 }
