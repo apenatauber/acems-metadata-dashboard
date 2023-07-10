@@ -10,6 +10,8 @@ The web app is currently accessible through [my personal Shinyapps.io account](h
 
 ### File directory structure
 
+`final-report.pdf` is a helpful resource for understanding the dashboard creation process from start to finish, as well as some relevant background, and findings of our group upon a relatively cursory analysis.
+
 `app` contains the Shiny app that is loaded onto the web. `app.R` is the code for running the Shiny app, `data` contains the raw call data file (`acems_metadata_2016_2022.csv`) as well as intermediate wrangling steps, and `www` contains images to load onto the app.
 
 `data-wrangling.Rmd` and `data-wrangling.pdf` explain the process for taking the input (raw) call metadata table downloaded from the ACEMS Board Drive and processing it for input into the app.
