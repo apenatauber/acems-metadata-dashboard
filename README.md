@@ -1,5 +1,7 @@
 ### ACEMS Metadata Dashboard
 
+![screenshot](acems-metadata-hq.png)
+
 This repository is a copy of a final project from STAT-231, in which we created a dashboard for visualizing geographic and calendar-time data for calls received by ACEMS, the EMS service running on Amherst College campus. It was created by Andrés Peña-Tauber '23, Reihaneh Iranmanesh '25, and Alex Hartwich '23 using [Shiny](https://www.rstudio.com/products/shiny/), a powerful app for making visual web apps in R.
 
 The dashboard uses a "freeze" of data from when call metadata was available starting Fall 2016 to April 2022 when it was downloaded as a .csv file and manually imported. Thus, it does not automatically update with new calls. Further, data needed to be manually cleaned and categorized. While helpful for past data analytics and perhaps categorizing data in various different ways, it may not be the best data pipeline to analyze data from newer time periods. It would need to be automated to serve this purpose.
